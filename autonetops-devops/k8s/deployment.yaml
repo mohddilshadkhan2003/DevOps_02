@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autonetops-backend
+  labels:
+    app: autonetops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autonetops
+  template:
+    metadata:
+      labels:
+        app: autonetops
+    spec:
+      containers:
+        - name: backend
+          image: autonetops/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATASTORE_URL
+              value: "sqlite:///data/db.sqlite3"

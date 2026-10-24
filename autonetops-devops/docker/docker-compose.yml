@@ -1,11 +1,26 @@
-version: '3.8'
+version: "3.9"
+
 services:
-  backend:
-    build: ./docker
-    image: autonetops/backend:dev
+  app:
+    container_name: autonetops-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: autonetops/app:local
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
-      - DATASTORE_URL=sqlite:///data/db.sqlite3
+      APP_ENV: "${APP_ENV:-development}"
+      DATASTORE_URL: "${DATASTORE_URL:-sqlite:////app/data/db.sqlite3}"
     volumes:
-      - ./data:/app/data
+      - autonetops_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; s = socket.socket(); s.settimeout(2); s.connect(('127.0.0.1', 8000)); s.close()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  autonetops_data:

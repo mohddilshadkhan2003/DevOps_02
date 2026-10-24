@@ -1,204 +1,250 @@
-# AutoNetOps — DevOps Starter Kit
+# AutoNetOps DevOps Starter Kit
 
-**DevOps starter project for AutoNetOps — containerization, Kubernetes manifests, and Terraform examples to bootstrap deployments and CI/CD.**
+A practical DevOps starter project for packaging, running, and deploying a Python-based service with Docker, Kubernetes, Terraform, and GitHub Actions.
+
+This repository is designed as a clean infrastructure and CI/CD foundation. It helps you understand how an application can be containerized, promoted through staging, and deployed with automation without needing a large custom backend setup.
 
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-blue)](https://github.com/mohddilshadkhan2003/DevOps_02/actions)
 [![Image](https://img.shields.io/badge/Image-GHCR-orange)](https://ghcr.io)
-[![License](https://img.shields.io/badge/License-MIT-green)](./autonetops-devops/LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 
 ---
 
 ## Overview
 
-AutoNetOps-DevOps is a self-contained DevOps starter kit extracted from an AutoNetOps demo application. It provides practical, production-minded examples for packaging an application as a container, running it locally with docker-compose, deploying to Kubernetes, and provisioning cloud infrastructure with Terraform. The repository is intentionally opinionated to help teams bootstrap infrastructure and CI/CD pipelines quickly.
+This project focuses on the operational side of software delivery:
 
-This project is structured to be copy-paste friendly, well-documented, and ready to adapt to your cloud and CI preferences.
+- Containerization with Docker
+- Local orchestration with Docker Compose
+- Kubernetes deployment manifests
+- Terraform infrastructure examples
+- GitHub Actions automation
+- Lightweight deployment scripts
 
-## What you'll find here
-
-- `docker/` — Dockerfile and `docker-compose.yml` for local development and image build
-- `k8s/` — Kubernetes manifests (Deployment, Service) for cluster deployment
-- `terraform/` — Example Terraform configuration (S3 state placeholder) to provision minimal cloud resources
-- `.github/workflows/` — GitHub Actions workflows (CI and image publish to GHCR)
-- `Makefile` — Common tasks: build, run, tf-init, tf-plan, k8s-apply
-- `scripts/` — Helper scripts for deploy and publish
-- `README.md` — this document (guide, architecture and workflows)
+The goal is to make the project easy to understand, easy to run, and professional enough to use as a starter for real-world deployments.
 
 ---
 
-## Architecture & Workflow
-
-High-level architecture:
+## High-level architecture
 
 ```mermaid
 flowchart LR
-  src[Source Code]
-  src -->|build| docker[Docker Build]
-  docker --> registry[Image Registry\n(GHCR/DockerHub)]
-  registry --> k8s[Kubernetes Cluster]
-  k8s --> users[Users / Clients]
-  terraform[Terraform]
-  terraform --> infra[Cloud Infra (S3, ECR, VPC...)]
-  ci[GitHub Actions CI/CD]
-  ci -->|on push/PR| docker
-  ci -->|on main| registry
-  ci -->|deploy| k8s
-  infra --> k8s
+    dev[Developer] --> repo[(GitHub Repository)]
+    repo --> ci[GitHub Actions CI]
+    ci --> build[Docker Build]
+    build --> image[Container Image]
+    image --> registry[GHCR / Docker Hub]
+    registry --> k8s[Kubernetes Cluster]
+    k8s --> users[Users / Clients]
+
+    tf[Terraform] --> infra[Cloud Resources]
+    infra --> k8s
 ```
 
-Workflow explanation:
+---
 
-- Developers push code and/or infrastructure changes to a feature branch and open a Pull Request.
-- CI workflow runs linting, tests, and builds a Docker image (for PR validation).
-- On merge to `main`, CI builds and publishes the image to the configured registry (GHCR by default).
-- Terraform configurations live in `terraform/` — run `terraform init` and `terraform apply` to provision cloud resources (or use Terraform Cloud).
-- Kubernetes manifests in `k8s/` are applied to your cluster (manually or via a CD step) and reference the container image from the registry.
+## Workflow
+
+1. Developer pushes code or infrastructure changes.
+2. GitHub Actions runs CI checks.
+3. Docker image is built and validated.
+4. The image is published to GHCR or Docker Hub.
+5. Kubernetes applies the deployment manifests.
+6. Terraform provisions or manages required cloud resources.
+
+This creates a professional workflow for a small service-based project without introducing unnecessary complexity.
 
 ---
 
-## Quickstart — Local Development
+## Repository structure
 
-Prerequisites
-- Docker & docker-compose
+```text
+autonetops-devops/
+├── .github/workflows/   # CI and publish automation
+├── docker/               # Dockerfile and Compose setup
+├── k8s/                  # Kubernetes Deployment and Service manifests
+├── scripts/              # Shell helper scripts
+├── terraform/            # Example Terraform configuration
+├── Makefile              # Common commands
+├── README.md             # Project documentation
+├── LICENSE               # License
+├── CONTRIBUTING.md        # Contribution guidelines
+└── CODE_OF_CONDUCT.md    # Community standards
+```
+
+---
+
+## What you need on your system
+
+Before running this project locally, install the following:
+
+- Git
+- Docker Desktop or Docker Engine
+- Docker Compose plugin
 - Make
-- (Optional) kubectl if you will apply k8s manifests to a cluster
+- Optional: kubectl
+- Optional: Terraform
+- Optional: AWS CLI / cloud credentials if using Terraform
 
-Build the image locally
+### Recommended versions
 
-  make build
-
-Run the application locally using docker-compose
-
-  make run
-
-This command runs the image built from `docker/Dockerfile` and mounts a local `./data` directory into the container for quick iterative development.
-
-Stop the local environment
-
-  docker-compose -f autonetops-devops/docker/docker-compose.yml down
+- Docker: 24+ or newer
+- Docker Compose: v2+
+- Git: 2.30+
+- Python: 3.11 (used by the container image)
 
 ---
 
-## Kubernetes (staging/prod)
+## Run locally
 
-To deploy to Kubernetes (assumes a configured kubeconfig pointing at your cluster):
+### 1. Clone the repository
 
-  kubectl apply -f autonetops-devops/k8s/
+```bash
+git clone https://github.com/mohddilshadkhan2003/DevOps_02.git
+cd DevOps_02
+```
 
-Verify rollout
+### 2. Build the image
 
-  kubectl rollout status deployment/autonetops-backend
+```bash
+make build
+```
 
-Notes:
-- Manifests use the image `ghcr.io/<owner>/autonetops-backend:latest` by default. Update the image tag to match your published image if necessary.
-- Consider using a Deployment strategy (rolling updates), resource requests/limits, and probes for production readiness.
+### 3. Run the service with Docker Compose
 
----
+```bash
+make run
+```
 
-## Terraform (cloud resources)
+Or directly:
 
-The `terraform/` directory contains a minimal example (an S3 bucket used as a placeholder for remote state). Before running:
+```bash
+docker compose -f autonetops-devops/docker/docker-compose.yml up --build
+```
 
-1. Set up AWS credentials in the environment (or configure another provider):
+The service is exposed on:
 
-  export AWS_ACCESS_KEY_ID=...
-  export AWS_SECRET_ACCESS_KEY=...
+```text
+http://localhost:8000
+```
 
-2. Initialize and plan:
+### 4. Stop the service
 
-  make tf-init
-  make tf-plan
-
-If you prefer Terraform Cloud, I can convert these configs to use a Terraform Cloud workspace and VCS-driven runs.
-
----
-
-## CI/CD (GitHub Actions)
-
-Workflows included:
-- `ci.yml`: runs on PRs and pushes to main. Installs dependencies, runs tests (placeholder) and builds the Docker image for validation.
-- `publish.yml`: on `main` builds and pushes the published image to GHCR. The workflow uses `GITHUB_TOKEN` to authenticate with GHCR by default.
-
-To publish to Docker Hub instead, add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` in repository secrets and I can update the workflow to use Docker Hub.
+```bash
+docker compose -f autonetops-devops/docker/docker-compose.yml down
+```
 
 ---
 
-## Secrets & Configuration
+## Useful Make targets
 
-Store secrets in GitHub repository secrets for Actions, or in your CI platform of choice:
-
-- `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (if pushing to Docker Hub)
-- `GITHUB_TOKEN` is provided automatically and can be used for GHCR publishing
-- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (for Terraform S3 backend)
-
-Environment variables used by the app (example):
-- `DATASTORE_URL` — connection string for the datastore (default in docker-compose uses SQLite file in `./data`)
-
----
-
-## Development workflow — recommended
-
-1. Create a feature branch: `git checkout -b feat/your-feature`
-2. Make code and/or infra changes.
-3. Run local checks:
-   - `make build` — builds the Docker image
-   - `make run` — run locally via docker-compose
-   - `make tf-plan` — review infra changes
-4. Push changes and open a Pull Request.
-5. CI runs validations. Address feedback and squash/fixup commits as needed.
-6. Merge to `main`. CI publishes the image and you can run Terraform apply and deploy to Kubernetes.
+```bash
+make build      # build container image
+make run        # start local environment
+make tf-init    # initialize terraform
+make tf-plan    # preview terraform changes
+make k8s-apply  # apply Kubernetes manifests
+```
 
 ---
 
-## Architecture diagram (component-level)
+## Kubernetes deployment
+
+To deploy the service to a cluster:
+
+```bash
+kubectl apply -f autonetops-devops/k8s/
+```
+
+Check rollout status:
+
+```bash
+kubectl rollout status deployment/autonetops-backend
+```
+
+---
+
+## Terraform setup
+
+If you want to work with Terraform:
+
+```bash
+make tf-init
+make tf-plan
+```
+
+Set AWS credentials if needed:
+
+```bash
+export AWS_ACCESS_KEY_ID=your-key
+export AWS_SECRET_ACCESS_KEY=your-secret
+```
+
+---
+
+## Deployment flow
 
 ```mermaid
-graph TD
-  subgraph Dev
-    dev[Developer]
-    dev -->|push| repo[(GitHub repo)]
-  end
-  subgraph CI/CD
-    repo -->|PR/Push| actions[GitHub Actions]
-    actions --> build[Build Image]
-    build --> publish[Publish Image (GHCR)]
-    actions --> test[Test & Lint]
-  end
-  subgraph Cloud
-    publish --> registry[GHCR / Docker Hub]
-    registry --> cluster[Kubernetes Cluster]
-    terraform --> infra[Cloud Resources (S3, VPC, etc.)]
-    infra --> cluster
-    actions -->|optional deploy| cluster
-  end
+sequenceDiagram
+    participant D as Developer
+    participant R as GitHub Repo
+    participant C as GitHub Actions
+    participant G as GHCR
+    participant K as Kubernetes
+
+    D->>R: Push code / merge PR
+    R->>C: Trigger workflow
+    C->>C: Run checks
+    C->>G: Build + push image
+    G->>K: Pull new image
+    K->>K: Rollout deployment
 ```
 
 ---
 
-## Troubleshooting & Tips
+## Notes
 
-- If Docker build fails: check base image versions and ensure dependencies are installable in `python:3.11-slim`.
-- If Kubernetes pods CrashLoopBackOff: check `kubectl logs` and `kubectl describe pod` to surface liveness/readiness probe failures or missing env vars.
-- For Terraform state: do not commit sensitive backend configs. Use remote state with S3+locking (DynamoDB) or Terraform Cloud.
-
----
-
-## Contributing
-
-Contributions are welcome. Please follow the contributing guidelines in `CONTRIBUTING.md`. Open issues for bugs or feature requests and submit PRs against `main` from topic branches.
+- This repository is a DevOps starter kit and infrastructure template.
+- It is focused on delivery automation rather than a custom business backend.
+- The setup is intentionally lightweight and clean so it is easy to adapt to real projects.
+- No extra backend service is required for the deployment flow described here.
 
 ---
 
-## Roadmap
+## Troubleshooting
 
-- Add a Helm chart or Kustomize overlays for environments (dev/staging/prod)
-- Add unit/integration tests and automated coverage reporting
-- Harden CI with security scanning (container image scanning, tfsec for Terraform)
+### Docker permission issues
+
+Ensure Docker Desktop is running, or your Linux user is in the docker group.
+
+### Port already in use
+
+Change the app port using an environment variable:
+
+```bash
+APP_PORT=8080 docker compose -f autonetops-devops/docker/docker-compose.yml up --build
+```
+
+### Kubernetes connection errors
+
+Verify your cluster context:
+
+```bash
+kubectl config current-context
+kubectl get nodes
+```
+
+### Terraform errors
+
+Check provider credentials and initialize the project again:
+
+```bash
+make tf-init
+```
 
 ---
 
-## License & Authors
+## License
 
-Licensed under the MIT License — see `LICENSE`.
+This project is licensed under the MIT License.
 
-Maintainer: Mohd Dilshad Khan (@mohddilshadkhan2003)

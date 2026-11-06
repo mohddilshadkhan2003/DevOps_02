@@ -9,3 +9,15 @@ variable "state_bucket_name" {
   type        = string
   default     = "autonetops-tf-state-CHANGE_ME"
 }
+
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  default     = "dev"
+}
+
+variable "force_destroy" {
+  description = "Allow Terraform to destroy the bucket when running destroy"
+  type        = bool
+  default     = false
+}
